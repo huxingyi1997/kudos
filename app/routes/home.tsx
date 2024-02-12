@@ -3,7 +3,7 @@ import { useLoaderData, Outlet } from '@remix-run/react'
 
 import { Kudo as IKudo, Profile, Prisma, User } from '@prisma/client'
 
-import { requireUserId } from "~/utils/auth.server";
+import { requireUserId, getUser } from "~/utils/auth.server";
 import { getOtherUsers } from "~/utils/user.server";
 import { getFilteredKudos, getRecentKudos } from '~/utils/kudos.server'
 import { Kudo } from '~/components/kudo'
@@ -62,11 +62,12 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   const kudos = await getFilteredKudos(userId, sortOptions, textFilter)
   const recentKudos = await getRecentKudos()
-  return json({ users, kudos, recentKudos })
+  const user = await getUser(request)
+  return json({ users, kudos, recentKudos, user })
 };
 
 export default function Home() {
-  const { users, kudos, recentKudos } = useLoaderData<{ users: User[]; kudos: KudoWithProfile[], recentKudos: KudoWithRecipient[] }>()
+  const { users, kudos, recentKudos, user } = useLoaderData<{ users: User[]; kudos: KudoWithProfile[]; recentKudos: KudoWithRecipient[]; user: User }>()
 
   return (
     <Layout>
@@ -75,7 +76,7 @@ export default function Home() {
         <UserPanel users={users as unknown as User[]} />
         
         <div className="flex-1 flex flex-col">
-        <SearchBar />
+            <SearchBar profile={user.profile} />
           <div className="flex-1 flex">
             <div className="w-full p-10 flex flex-col gap-y-4">
               {(kudos as unknown as KudoWithProfile[]).map((kudo: KudoWithProfile) => (
